@@ -29,13 +29,67 @@ export class RoomManager {
       user2,
     });
 
-    user1.socket.emit("send-offer", {
-      roomId,
-    });
+    [user1, user2].forEach((user) =>
+      user.socket.send(
+        JSON.stringify({
+          type: "send-offer",
+          roomId,
+        })
+      )
+    );
+  }
 
-    user2.socket.emit("send-offer", {
-      roomId,
-    });
+  userOffer(roomId: string, sdp: any, senderSocketId: string) {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return;
+    }
+    const receivingUser =
+      room.user1.id === senderSocketId ? room.user2 : room.user1;
+    receivingUser.socket.send(
+      JSON.stringify({
+        type: "offer",
+        sdp,
+        roomId,
+      })
+    );
+  }
+
+  userAnswer(roomId: string, sdp: any, senderSocketId: string) {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return;
+    }
+    const receivingUser =
+      room.user1.id === senderSocketId ? room.user2 : room.user1;
+    receivingUser.socket.send(
+      JSON.stringify({
+        type: "answer",
+        sdp,
+        roomId,
+      })
+    );
+  }
+
+  userIceCandidate(
+    roomId: string,
+    candidate: any,
+    senderSocketId: string,
+    userType: "sender" | "receiver"
+  ) {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return;
+    }
+    const receivingUser =
+      room.user1.id === senderSocketId ? room.user2 : room.user1;
+    receivingUser.socket.send(
+      JSON.stringify({
+        type: "add-ice-candidate",
+        candidate,
+        userType,
+      })
+    );
   }
 
   generateId() {
