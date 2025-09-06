@@ -33,7 +33,9 @@ export class RoomManager {
       user.socket.send(
         JSON.stringify({
           type: "send-offer",
-          roomId,
+          payload: {
+            roomId,
+          },
         })
       )
     );
@@ -49,8 +51,10 @@ export class RoomManager {
     receivingUser.socket.send(
       JSON.stringify({
         type: "offer",
-        sdp,
-        roomId,
+        payload: {
+          sdp,
+          roomId,
+        },
       })
     );
   }
@@ -65,8 +69,10 @@ export class RoomManager {
     receivingUser.socket.send(
       JSON.stringify({
         type: "answer",
-        sdp,
-        roomId,
+        payload: {
+          sdp,
+          roomId,
+        },
       })
     );
   }
@@ -86,10 +92,36 @@ export class RoomManager {
     receivingUser.socket.send(
       JSON.stringify({
         type: "add-ice-candidate",
-        candidate,
-        userType,
+        payload: {
+          candidate,
+          userType,
+        },
       })
     );
+  }
+
+  removeUserFromRoom(userId: string) {
+    for (const [roomId, room] of this.rooms.entries()) {
+      if (room.user1.id === userId || room.user2.id === userId) {
+        const otherUser = room.user1.id === userId ? room.user2 : room.user1;
+        otherUser.socket.send(
+          JSON.stringify({
+            type: "peer-disconnected",
+            payload: {
+              roomId,
+              message: `User ${userId} has disconnected`,
+            },
+          })
+        );
+
+        this.rooms.delete(roomId);
+        console.log(
+          `Room ${roomId} removed due to user ${userId} disconnection`
+        );
+        return;
+      }
+    }
+    console.warn(`No room found for user ${userId}`);
   }
 
   generateId() {

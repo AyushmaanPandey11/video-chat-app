@@ -39,6 +39,16 @@ export class UserManager {
     this.initEventHandlers(socket, id);
   }
 
+  removeUser(userSocket: WebSocket) {
+    const user = this.users.find((x) => x.socket === userSocket);
+    if (user) {
+      this.users = this.users.filter((x) => x.socket !== userSocket);
+      this.queue = this.queue.filter((x) => x !== user.id);
+      this.roomManager.removeUserFromRoom?.(user.id);
+    }
+    return user;
+  }
+
   matchAndClearQueue() {
     if (this.queue.length < 2) {
       return;
@@ -51,6 +61,8 @@ export class UserManager {
     const user1 = this.users.find((u) => u.id === id1);
     const user2 = this.users.find((u) => u.id === id2);
     if (!user1 || !user2) {
+      if (id1) this.queue.push(id1);
+      if (id2) this.queue.push(id2);
       return;
     }
 
@@ -61,20 +73,34 @@ export class UserManager {
   initEventHandlers(socket: WebSocket, userSocketId: string) {
     socket.on("message", (data: any) => {
       const message = JSON.parse(data);
+      const userObj = this.users.find((user) => user.id === userSocketId);
+      if (!userObj) {
+        return;
+      }
       const type = message.type;
       switch (type) {
         case "offer":
-          this.roomManager.userOffer(message.roomId, message.sdp, userSocketId);
+          userObj.name = message.payload.name;
+          this.roomManager.userOffer(
+            message.payload.roomId,
+            message.payload.sdp,
+            userSocketId
+          );
           break;
         case "answer":
-          this.roomManager.userOffer(message.roomId, message.sdp, userSocketId);
+          userObj.name = message.payload.name;
+          this.roomManager.userOffer(
+            message.payload.roomId,
+            message.payload.sdp,
+            userSocketId
+          );
           break;
         case "add-ice-candidate":
           this.roomManager.userIceCandidate(
-            message.roomId,
-            message.candidate,
+            message.payload.roomId,
+            message.payload.candidate,
             userSocketId,
-            message.userType
+            message.payload.userType
           );
           break;
 

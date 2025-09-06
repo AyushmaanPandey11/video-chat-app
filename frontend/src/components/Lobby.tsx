@@ -1,7 +1,7 @@
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { MessageBody } from "../types";
 
-const Friend = memo(
+const Lobby = memo(
   ({
     name,
     audioTrack,
@@ -11,15 +11,21 @@ const Friend = memo(
     audioTrack: MediaStreamTrack | null;
     videoTrack: MediaStreamTrack | null;
   }) => {
-    const [socket, setSocket] = useState<WebSocket | null>(null);
+    const socket = useRef<WebSocket | null>(null);
     const [lobby, setLobby] = useState(true);
     const [sendingPc, setSendingPc] = useState<null | RTCPeerConnection>(null);
     const [receivingPc, setReceivingPc] = useState<null | RTCPeerConnection>(
       null
     );
+    const localVideoRef = useRef<HTMLVideoElement>(null);
+    const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
       const ws = new WebSocket("ws://localhost:8080");
+      socket.current = ws;
+      ws.onopen = () => {
+        console.log("WebSocket connection established");
+      };
       ws.onmessage = async (event) => {
         if (event.data === "lobby") {
           setLobby(true);
@@ -29,13 +35,29 @@ const Friend = memo(
             setLobby(false);
             const roomId = parsedMessage.payload.roomId;
             const pc = new RTCPeerConnection();
-            setSendingPc(pc);
             if (audioTrack) {
               pc.addTrack(audioTrack);
             }
             if (videoTrack) {
               pc.addTrack(videoTrack);
             }
+            setSendingPc(pc);
+
+            pc.ontrack = (e) => {
+              const { track } = e;
+              if (remoteVideoRef.current) {
+                const stream =
+                  (remoteVideoRef.current.srcObject as MediaStream) ||
+                  new MediaStream();
+                stream.addTrack(track);
+                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current
+                  .play()
+                  .catch((error) =>
+                    console.error("Error playing remote video:", error)
+                  );
+              }
+            };
 
             pc.onnegotiationneeded = async () => {
               const sdp = await pc.createOffer();
@@ -44,8 +66,8 @@ const Friend = memo(
                 JSON.stringify({
                   type: "offer",
                   payload: {
-                    sdp: sdp,
-                    roomId: roomId,
+                    sdp,
+                    roomId,
                   },
                 })
               );
@@ -57,7 +79,7 @@ const Friend = memo(
                   JSON.stringify({
                     type: "add-ice-candidate",
                     payload: {
-                      sdp: sendingPc,
+                      candidate: e.candidate,
                       roomId: roomId,
                     },
                   })
@@ -65,11 +87,11 @@ const Friend = memo(
               }
             };
           } else if (parsedMessage.type === "offer") {
+            setLobby(false);
             const { sdp: remoteSdp, roomId } = parsedMessage.payload;
             if (!remoteSdp) {
               return;
             }
-            setLobby(false);
             const pc = new RTCPeerConnection();
             await pc.setRemoteDescription(remoteSdp);
             const sdp = await pc.createAnswer();
@@ -84,6 +106,23 @@ const Friend = memo(
                 },
               })
             );
+
+            pc.ontrack = (e) => {
+              const { track } = e;
+              if (remoteVideoRef.current) {
+                const stream =
+                  (remoteVideoRef.current.srcObject as MediaStream) ||
+                  new MediaStream();
+                stream?.addTrack(track);
+                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current
+                  .play()
+                  .catch((error) =>
+                    console.error("Error playing remote video:", error)
+                  );
+              }
+            };
+
             pc.onicecandidate = async (e) => {
               if (!e.candidate) {
                 return;
@@ -118,7 +157,7 @@ const Friend = memo(
             if (userType === "sender") {
               setReceivingPc((pc) => {
                 if (!pc) {
-                  console.error("receicng pc nout found");
+                  console.error("receiving pc not found");
                 } else {
                   console.log(pc.ontrack);
                 }
@@ -139,15 +178,42 @@ const Friend = memo(
           }
         }
       };
-      setSocket(ws);
-    }, [name, videoTrack, audioTrack, sendingPc]);
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        alert("WebSocket connection failed");
+      };
+
+      ws.onclose = () => {
+        console.log("WebSocket connection closed");
+        setLobby(true);
+      };
+      return () => {
+        ws.close();
+        sendingPc?.close();
+        setSendingPc(null);
+        receivingPc?.close();
+        setReceivingPc(null);
+      };
+    }, [name, videoTrack, audioTrack]);
+
+    useEffect(() => {
+      if (localVideoRef.current && videoTrack) {
+        localVideoRef.current.srcObject = new MediaStream([videoTrack]);
+        localVideoRef.current.play().catch((err) => {
+          console.error("Error playing local Video: ", err);
+        });
+      }
+    }, [videoTrack]);
 
     return (
       <div>
         <h1>hi ${name}</h1>
+        <video autoPlay muted width={400} ref={localVideoRef} />
+        {lobby ? "Waiting in lobby to connect with others" : null}
+        <video autoPlay playsInline width={400} ref={remoteVideoRef} />
       </div>
     );
   }
 );
 
-export default Friend;
+export default Lobby;

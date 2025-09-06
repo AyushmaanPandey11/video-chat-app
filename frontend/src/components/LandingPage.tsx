@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import Friend from "./Friend";
+import Lobby from "./Lobby";
 
 const LandingPage = () => {
   const usernameRef = useRef<string>("");
@@ -38,7 +38,7 @@ const LandingPage = () => {
           onChange={(e) => (usernameRef.current = e.target.value)}
         />
       </>
-      <Friend
+      <Lobby
         name={usernameRef.current}
         audioTrack={audioTrack}
         videoTrack={videoTrack}
