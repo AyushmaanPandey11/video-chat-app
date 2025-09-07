@@ -89,7 +89,7 @@ export class UserManager {
           break;
         case "answer":
           userObj.name = message.payload.name;
-          this.roomManager.userOffer(
+          this.roomManager.userAnswer(
             message.payload.roomId,
             message.payload.sdp,
             userSocketId
