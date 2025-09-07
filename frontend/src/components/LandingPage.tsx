@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Lobby from "./Lobby";
 
 const LandingPage = () => {
-  const usernameRef = useRef<string>("");
+  const [username, setUsername] = useState<string>("");
+  const nameRef = useRef<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const [audioTrack, setAudioTrack] = useState<MediaStreamTrack | null>(null);
   const [videoTrack, setVideoTrack] = useState<MediaStreamTrack | null>(null);
@@ -30,19 +31,38 @@ const LandingPage = () => {
   }, [getStreamData]);
 
   return (
-    <div>
-      <>
-        <video autoPlay ref={videoRef}></video>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-around",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          marginLeft: "5vw",
+          padding: "10px",
+          marginRight: "10vw",
+        }}
+      >
+        <video autoPlay width={500} ref={videoRef} />
+        <label>Enter Your name</label>
         <input
           type="text"
-          onChange={(e) => (usernameRef.current = e.target.value)}
+          onChange={(e) => (nameRef.current = e.target.value)}
         />
-      </>
-      <Lobby
-        name={usernameRef.current}
-        audioTrack={audioTrack}
-        videoTrack={videoTrack}
-      />
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            setUsername(nameRef.current);
+          }}
+        >
+          Join Lobby
+        </button>
+      </div>
+      <Lobby name={username} audioTrack={audioTrack} videoTrack={videoTrack} />
     </div>
   );
 };

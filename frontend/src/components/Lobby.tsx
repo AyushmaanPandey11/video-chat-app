@@ -21,7 +21,7 @@ const Lobby = memo(
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
-      const ws = new WebSocket("ws://localhost:8080");
+      const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
       socket.current = ws;
       ws.onopen = () => {
         console.log("WebSocket connection established");
@@ -194,7 +194,7 @@ const Lobby = memo(
         receivingPc?.close();
         setReceivingPc(null);
       };
-    }, [name, videoTrack, audioTrack]);
+    }, [videoTrack, audioTrack, sendingPc, receivingPc]);
 
     useEffect(() => {
       if (localVideoRef.current && videoTrack) {
@@ -207,10 +207,19 @@ const Lobby = memo(
 
     return (
       <div>
-        <h1>hi ${name}</h1>
-        <video autoPlay muted width={400} ref={localVideoRef} />
-        {lobby ? "Waiting in lobby to connect with others" : null}
-        <video autoPlay playsInline width={400} ref={remoteVideoRef} />
+        {name && <h1>hi {name}</h1>}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            marginBottom: "10px",
+            paddingBottom: "40px",
+          }}
+        >
+          <video autoPlay muted width={500} ref={localVideoRef} />
+          {lobby ? "Waiting in lobby to connect with others" : null}
+          <video autoPlay playsInline width={800} ref={remoteVideoRef} />
+        </div>
       </div>
     );
   }
