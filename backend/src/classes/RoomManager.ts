@@ -29,15 +29,18 @@ export class RoomManager {
       user2,
     });
 
-    [user1, user2].forEach((user) =>
-      user.socket.send(
-        JSON.stringify({
-          type: "send-offer",
-          payload: {
-            roomId,
-          },
-        })
-      )
+    user1.socket.send(
+      JSON.stringify({
+        type: "send-offer",
+        payload: { roomId },
+      })
+    );
+
+    user2.socket.send(
+      JSON.stringify({
+        type: "wait-for-offer",
+        payload: { roomId },
+      })
     );
   }
 
@@ -113,7 +116,7 @@ export class RoomManager {
             },
           })
         );
-
+        otherUser.socket.send("lobby");
         this.rooms.delete(roomId);
         console.log(
           `Room ${roomId} removed due to user ${userId} disconnection`

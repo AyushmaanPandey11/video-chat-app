@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import type { MessageBody } from "../types";
 
 const Lobby = memo(
@@ -20,6 +20,20 @@ const Lobby = memo(
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
+    const cleanupPeerConnections = useCallback(() => {
+      setSendingPc((pc) => {
+        pc?.close();
+        return null;
+      });
+      setReceivingPc((pc) => {
+        pc?.close();
+        return null;
+      });
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = null;
+      }
+    }, []);
+
     useEffect(() => {
       if (!name) return;
       const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
@@ -30,10 +44,13 @@ const Lobby = memo(
       ws.onmessage = async (event) => {
         if (event.data === "lobby") {
           setLobby(true);
+          cleanupPeerConnections();
         } else {
           const parsedMessage: MessageBody = JSON.parse(event.data);
+          console.log(parsedMessage);
           if (parsedMessage.type === "send-offer") {
             setLobby(false);
+            cleanupPeerConnections();
             const roomId = parsedMessage.payload.roomId;
             const pc = new RTCPeerConnection();
             if (audioTrack) {
@@ -87,8 +104,48 @@ const Lobby = memo(
                 );
               }
             };
+          } else if (parsedMessage.type === "wait-for-offer") {
+            setLobby(false);
+            cleanupPeerConnections();
+            const roomId = parsedMessage.payload.roomId;
+            const pc = new RTCPeerConnection();
+            if (audioTrack) pc.addTrack(audioTrack);
+            if (videoTrack) pc.addTrack(videoTrack);
+            setReceivingPc(pc);
+
+            pc.ontrack = (e) => {
+              const { track } = e;
+              if (remoteVideoRef.current) {
+                const stream =
+                  (remoteVideoRef.current.srcObject as MediaStream) ||
+                  new MediaStream();
+                stream.addTrack(track);
+                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current
+                  .play()
+                  .catch((error) =>
+                    console.error("Error playing remote video:", error)
+                  );
+              }
+            };
+
+            pc.onicecandidate = async (e) => {
+              if (e.candidate) {
+                ws.send(
+                  JSON.stringify({
+                    type: "add-ice-candidate",
+                    payload: {
+                      candidate: e.candidate,
+                      userType: "receiver",
+                      roomId,
+                    },
+                  })
+                );
+              }
+            };
           } else if (parsedMessage.type === "offer") {
             setLobby(false);
+            cleanupPeerConnections();
             const { sdp: remoteSdp, roomId } = parsedMessage.payload;
             if (!remoteSdp) {
               return;
@@ -190,12 +247,8 @@ const Lobby = memo(
       };
       return () => {
         ws.close();
-        sendingPc?.close();
-        setSendingPc(null);
-        receivingPc?.close();
-        setReceivingPc(null);
       };
-    }, [videoTrack, audioTrack, sendingPc, receivingPc, name]);
+    }, [videoTrack, audioTrack, name, cleanupPeerConnections]);
 
     useEffect(() => {
       if (localVideoRef.current && videoTrack) {

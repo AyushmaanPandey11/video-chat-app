@@ -30,6 +30,13 @@ const LandingPage = () => {
     }
   }, [getStreamData]);
 
+  // Conditional Rendering logic
+  if (username) {
+    return (
+      <Lobby name={username} audioTrack={audioTrack} videoTrack={videoTrack} />
+    );
+  }
+
   return (
     <div
       style={{
@@ -62,7 +69,6 @@ const LandingPage = () => {
           Join Lobby
         </button>
       </div>
-      <Lobby name={username} audioTrack={audioTrack} videoTrack={videoTrack} />
     </div>
   );
 };

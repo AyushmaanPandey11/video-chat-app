@@ -4,7 +4,8 @@ export interface MessageBody {
     | "offer"
     | "answer"
     | "add-ice-candidate"
-    | "peer-disconnected";
+    | "peer-disconnected"
+    | "wait-for-offer";
   payload: {
     sdp?: RTCSessionDescriptionInit;
     roomId?: string;
