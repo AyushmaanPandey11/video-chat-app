@@ -195,7 +195,7 @@ const Lobby = memo(
         receivingPc?.close();
         setReceivingPc(null);
       };
-    }, [videoTrack, audioTrack, sendingPc, receivingPc]);
+    }, [videoTrack, audioTrack, sendingPc, receivingPc, name]);
 
     useEffect(() => {
       if (localVideoRef.current && videoTrack) {
