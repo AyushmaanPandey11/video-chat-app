@@ -21,6 +21,7 @@ const Lobby = memo(
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
+      if (!name) return;
       const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
       socket.current = ws;
       ws.onopen = () => {
@@ -185,7 +186,7 @@ const Lobby = memo(
 
       ws.onclose = () => {
         console.log("WebSocket connection closed");
-        setLobby(true);
+        setLobby(false);
       };
       return () => {
         ws.close();

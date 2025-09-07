@@ -44,7 +44,6 @@ export class UserManager {
     if (user) {
       this.users = this.users.filter((x) => x.socket !== userSocket);
       this.queue = this.queue.filter((x) => x !== user.id);
-      this.roomManager.removeUserFromRoom?.(user.id);
     }
     return user;
   }
