@@ -23,3 +23,13 @@ wss.on("connection", (userSocket) => {
     }
   });
 });
+const PORT = 8080;
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Health check available at http://localhost:${PORT}/health`);
+});
+
+// Error handling for server
+server.on("error", (error) => {
+  console.error("Server error:", error.message);
+});
