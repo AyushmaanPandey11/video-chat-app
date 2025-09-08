@@ -24,7 +24,7 @@ export class RoomManager {
 
   createRoom(user1: User, user2: User) {
     const roomId = this.generateId();
-    this.rooms.set(roomId.toString(), {
+    this.rooms.set(roomId, {
       user1,
       user2,
     });
@@ -128,6 +128,6 @@ export class RoomManager {
   }
 
   generateId() {
-    return GLOBAL_ROOM_ID++;
+    return (GLOBAL_ROOM_ID++).toString();
   }
 }
