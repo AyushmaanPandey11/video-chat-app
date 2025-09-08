@@ -36,8 +36,8 @@ const Lobby = memo(
 
     useEffect(() => {
       if (!name) return;
-      // const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
-      const ws = new WebSocket("ws:localhost:8080");
+      const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
+      // const ws = new WebSocket("ws:localhost:8080");
       socket.current = ws;
       ws.onopen = () => {
         console.log("WebSocket connection established");
