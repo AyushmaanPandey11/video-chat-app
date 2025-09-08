@@ -101,6 +101,7 @@ const Lobby = memo(
                     payload: {
                       candidate: e.candidate,
                       roomId: roomId,
+                      userType: "sender",
                     },
                   })
                 );
