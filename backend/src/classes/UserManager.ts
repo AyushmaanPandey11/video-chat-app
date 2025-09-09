@@ -54,7 +54,6 @@ export class UserManager {
     }
     // current userid
     const id1 = this.queue.pop();
-    // last usersid we are pairing with
     const id2 = this.queue.pop();
 
     const user1 = this.users.find((u) => u.id === id1);
@@ -83,7 +82,8 @@ export class UserManager {
           this.roomManager.userOffer(
             message.payload.roomId,
             message.payload.sdp,
-            userSocketId
+            userSocketId,
+            message.payload.name
           );
           break;
         case "answer":
@@ -91,7 +91,8 @@ export class UserManager {
           this.roomManager.userAnswer(
             message.payload.roomId,
             message.payload.sdp,
-            userSocketId
+            userSocketId,
+            message.payload.name
           );
           break;
         case "add-ice-candidate":

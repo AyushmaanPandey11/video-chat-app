@@ -44,11 +44,19 @@ export class RoomManager {
     );
   }
 
-  userOffer(roomId: string, sdp: any, senderSocketId: string) {
+  userOffer(
+    roomId: string,
+    sdp: any,
+    senderSocketId: string,
+    senderName: string
+  ) {
     const room = this.rooms.get(roomId);
     if (!room) {
       return;
     }
+    const sendingUser =
+      room.user1.id === senderSocketId ? room.user1 : room.user2;
+    sendingUser.name = senderName;
     const receivingUser =
       room.user1.id === senderSocketId ? room.user2 : room.user1;
     receivingUser.socket.send(
@@ -57,16 +65,26 @@ export class RoomManager {
         payload: {
           sdp,
           roomId,
+          name: sendingUser.name,
         },
       })
     );
   }
 
-  userAnswer(roomId: string, sdp: any, senderSocketId: string) {
+  userAnswer(
+    roomId: string,
+    sdp: any,
+    senderSocketId: string,
+    receiverName: string
+  ) {
     const room = this.rooms.get(roomId);
     if (!room) {
       return;
     }
+    const sendingUser =
+      room.user1.id === senderSocketId ? room.user1 : room.user2;
+    sendingUser.name = receiverName;
+
     const receivingUser =
       room.user1.id === senderSocketId ? room.user2 : room.user1;
     receivingUser.socket.send(
@@ -75,6 +93,7 @@ export class RoomManager {
         payload: {
           sdp,
           roomId,
+          name: sendingUser.name,
         },
       })
     );

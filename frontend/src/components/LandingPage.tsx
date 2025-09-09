@@ -33,7 +33,11 @@ const LandingPage = () => {
   // Conditional Rendering logic
   if (username) {
     return (
-      <Lobby name={username} audioTrack={audioTrack} videoTrack={videoTrack} />
+      <Lobby
+        name={username}
+        localAudioTrack={audioTrack}
+        locaVideoTrack={videoTrack}
+      />
     );
   }
 

@@ -16,6 +16,7 @@ export type MessageBody =
       payload: {
         sdp: RTCSessionDescription;
         roomId: string;
+        name: string;
       };
     }
   | {
@@ -23,6 +24,7 @@ export type MessageBody =
       payload: {
         sdp: RTCSessionDescription;
         roomId: string;
+        name: string;
       };
     }
   | {
