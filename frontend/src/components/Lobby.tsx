@@ -13,10 +13,8 @@ const Lobby = memo(
   }) => {
     const socket = useRef<WebSocket | null>(null);
     const [lobby, setLobby] = useState(true);
-    const [sendingPc, setSendingPc] = useState<null | RTCPeerConnection>(null);
-    const [receivingPc, setReceivingPc] = useState<null | RTCPeerConnection>(
-      null
-    );
+    const [peerConnection, setPeerConnection] =
+      useState<null | RTCPeerConnection>(null);
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const [queuedCandidates, setQueuedCandidates] = useState<RTCIceCandidate[]>(
@@ -24,11 +22,7 @@ const Lobby = memo(
     );
 
     const cleanupPeerConnections = useCallback(() => {
-      setSendingPc((pc) => {
-        pc?.close();
-        return null;
-      });
-      setReceivingPc((pc) => {
+      setPeerConnection((pc) => {
         pc?.close();
         return null;
       });
@@ -57,31 +51,13 @@ const Lobby = memo(
             cleanupPeerConnections();
             const roomId = parsedMessage.payload.roomId;
             const pc = new RTCPeerConnection();
+            setPeerConnection(pc);
             if (audioTrack) {
               pc.addTrack(audioTrack);
             }
             if (videoTrack) {
               pc.addTrack(videoTrack);
             }
-            setSendingPc(pc);
-
-            pc.ontrack = (e) => {
-              const { track } = e;
-              if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                // Explicitly set srcObject to null first to force a refresh
-                remoteVideoRef.current.srcObject = null;
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current
-                  .play()
-                  .catch((error) =>
-                    console.error("Error playing remote video:", error)
-                  );
-              }
-            };
 
             pc.onnegotiationneeded = async () => {
               const sdp = await pc.createOffer();
@@ -112,16 +88,10 @@ const Lobby = memo(
                 );
               }
             };
-          } else if (parsedMessage.type === "wait-for-offer") {
-            setLobby(false);
-            cleanupPeerConnections();
-            const roomId = parsedMessage.payload.roomId;
-            const pc = new RTCPeerConnection();
-            if (audioTrack) pc.addTrack(audioTrack);
-            if (videoTrack) pc.addTrack(videoTrack);
-            setReceivingPc(pc);
 
             pc.ontrack = (e) => {
+              // This is the crucial part for the sender to receive video
+              // The same ontrack logic from your "offer" handler goes here.
               const { track } = e;
               if (remoteVideoRef.current) {
                 const stream =
@@ -129,28 +99,11 @@ const Lobby = memo(
                   new MediaStream();
                 stream.addTrack(track);
                 remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current
-                  .play()
-                  .catch((error) =>
-                    console.error("Error playing remote video:", error)
-                  );
+                remoteVideoRef.current.play();
               }
             };
-
-            pc.onicecandidate = async (e) => {
-              if (e.candidate) {
-                ws.send(
-                  JSON.stringify({
-                    type: "add-ice-candidate",
-                    payload: {
-                      candidate: e.candidate,
-                      userType: "receiver",
-                      roomId,
-                    },
-                  })
-                );
-              }
-            };
+          } else if (parsedMessage.type === "wait-for-offer") {
+            setLobby(true);
           } else if (parsedMessage.type === "offer") {
             setLobby(false);
             cleanupPeerConnections();
@@ -159,25 +112,24 @@ const Lobby = memo(
               return;
             }
             const pc = new RTCPeerConnection();
-            if (audioTrack) pc.addTrack(audioTrack);
-            if (videoTrack) pc.addTrack(videoTrack);
-            await pc.setRemoteDescription(remoteSdp);
+            setPeerConnection(pc);
+            pc.setRemoteDescription(remoteSdp);
             const sdp = await pc.createAnswer();
             pc.setLocalDescription(sdp);
-            setReceivingPc(pc);
+            if (audioTrack) {
+              pc.addTrack(audioTrack);
+            }
+            if (videoTrack) {
+              pc.addTrack(videoTrack);
+            }
+            const stream = new MediaStream();
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = stream;
+            }
             queuedCandidates.forEach((candidate) => {
               pc.addIceCandidate(candidate);
             });
             setQueuedCandidates([]);
-            ws.send(
-              JSON.stringify({
-                type: "answer",
-                payload: {
-                  roomId,
-                  sdp,
-                },
-              })
-            );
 
             pc.ontrack = (e) => {
               const { track } = e;
@@ -186,8 +138,6 @@ const Lobby = memo(
                   (remoteVideoRef.current.srcObject as MediaStream) ||
                   new MediaStream();
                 stream?.addTrack(track);
-                // Explicitly set srcObject to null first to force a refresh
-                remoteVideoRef.current.srcObject = null;
                 remoteVideoRef.current.srcObject = stream;
                 remoteVideoRef.current
                   .play()
@@ -215,35 +165,55 @@ const Lobby = memo(
                 );
               }
             };
+
+            ws.send(
+              JSON.stringify({
+                type: "answer",
+                payload: {
+                  roomId,
+                  sdp,
+                },
+              })
+            );
+            setTimeout(() => {
+              const track1 = pc.getTransceivers()[0].receiver.track;
+              const track2 = pc.getTransceivers()[1].receiver.track;
+              console.log(track1);
+              if (!remoteVideoRef.current) {
+                return;
+              }
+              const stream =
+                (remoteVideoRef.current.srcObject as MediaStream) ||
+                new MediaStream();
+              stream.addTrack(track1);
+              stream.addTrack(track2);
+              remoteVideoRef.current.srcObject = stream;
+              remoteVideoRef.current?.play();
+            }, 2000);
           } else if (parsedMessage.type === "answer") {
             setLobby(false);
             const { sdp: remoteSdp } = parsedMessage.payload;
             if (!remoteSdp) {
               return;
             }
-            setSendingPc((pc) => {
+            setPeerConnection((pc) => {
               pc?.setRemoteDescription(remoteSdp);
               return pc;
             });
           } else if (parsedMessage.type === "add-ice-candidate") {
-            setLobby(false);
-            const { userType, candidate } = parsedMessage.payload;
-            if (!candidate) {
-              return;
-            }
+            // setLobby(false);
+            const { candidate } = parsedMessage.payload;
+            if (!candidate) return;
             const iceCandidate = new RTCIceCandidate(candidate);
-            if (userType === "sender") {
-              if (receivingPc) {
-                receivingPc.addIceCandidate(candidate);
+
+            setPeerConnection((pc) => {
+              if (pc && pc.remoteDescription) {
+                pc.addIceCandidate(iceCandidate);
               } else {
                 setQueuedCandidates((prev) => [...prev, iceCandidate]);
               }
-            } else {
-              setSendingPc((pc) => {
-                pc?.addIceCandidate(candidate);
-                return pc;
-              });
-            }
+              return pc;
+            });
           }
         }
       };
@@ -276,13 +246,16 @@ const Lobby = memo(
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
+            flexDirection: "row",
             marginBottom: "10px",
             paddingBottom: "40px",
+            marginRight: "50px",
           }}
         >
-          <video autoPlay muted width={500} ref={localVideoRef} />
-          {lobby ? "Waiting in lobby to connect with others" : null}
+          <div>
+            <video autoPlay muted width={400} ref={localVideoRef} />
+            {lobby ? "Waiting in lobby to connect with others" : null}
+          </div>
           <video autoPlay playsInline width={800} ref={remoteVideoRef} />
         </div>
       </div>
