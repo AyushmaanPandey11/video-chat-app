@@ -66,15 +66,8 @@ const Lobby = memo(
             setSendingPc(pc);
 
             pc.ontrack = (e) => {
-              const { track } = e;
               if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                // Explicitly set srcObject to null first to force a refresh
-                remoteVideoRef.current.srcObject = null;
-                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current.srcObject = e.streams[0];
                 remoteVideoRef.current
                   .play()
                   .catch((error) =>
@@ -105,8 +98,8 @@ const Lobby = memo(
                     type: "add-ice-candidate",
                     payload: {
                       candidate: e.candidate,
-                      roomId: roomId,
                       userType: "sender",
+                      roomId,
                     },
                   })
                 );
@@ -115,42 +108,7 @@ const Lobby = memo(
           } else if (parsedMessage.type === "wait-for-offer") {
             setLobby(false);
             cleanupPeerConnections();
-            const roomId = parsedMessage.payload.roomId;
-            const pc = new RTCPeerConnection();
-            if (audioTrack) pc.addTrack(audioTrack);
-            if (videoTrack) pc.addTrack(videoTrack);
-            setReceivingPc(pc);
-
-            pc.ontrack = (e) => {
-              const { track } = e;
-              if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current
-                  .play()
-                  .catch((error) =>
-                    console.error("Error playing remote video:", error)
-                  );
-              }
-            };
-
-            pc.onicecandidate = async (e) => {
-              if (e.candidate) {
-                ws.send(
-                  JSON.stringify({
-                    type: "add-ice-candidate",
-                    payload: {
-                      candidate: e.candidate,
-                      userType: "receiver",
-                      roomId,
-                    },
-                  })
-                );
-              }
-            };
+            // const roomId = parsedMessage.payload.roomId;
           } else if (parsedMessage.type === "offer") {
             setLobby(false);
             cleanupPeerConnections();
@@ -165,6 +123,21 @@ const Lobby = memo(
             const sdp = await pc.createAnswer();
             pc.setLocalDescription(sdp);
             setReceivingPc(pc);
+            pc.ontrack = (e) => {
+              // console.log("Receiver ontrack event triggered:", e.streams);
+              if (remoteVideoRef.current) {
+                console.log(
+                  "Receiver ontrack inside condition triggered:",
+                  e.streams
+                );
+                remoteVideoRef.current.srcObject = e.streams[0];
+                remoteVideoRef.current
+                  .play()
+                  .catch((error) =>
+                    console.error("Error playing remote video:", error)
+                  );
+              }
+            };
             queuedCandidates.forEach((candidate) => {
               pc.addIceCandidate(candidate);
             });
@@ -179,29 +152,7 @@ const Lobby = memo(
               })
             );
 
-            pc.ontrack = (e) => {
-              const { track } = e;
-              if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream?.addTrack(track);
-                // Explicitly set srcObject to null first to force a refresh
-                remoteVideoRef.current.srcObject = null;
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current
-                  .play()
-                  .catch((error) =>
-                    console.error("Error playing remote video:", error)
-                  );
-              }
-            };
-
             pc.onicecandidate = async (e) => {
-              if (!e.candidate) {
-                return;
-              }
-              console.log("on ice candidate on receiving side");
               if (e.candidate) {
                 ws.send(
                   JSON.stringify({
@@ -234,13 +185,13 @@ const Lobby = memo(
             const iceCandidate = new RTCIceCandidate(candidate);
             if (userType === "sender") {
               if (receivingPc) {
-                receivingPc.addIceCandidate(candidate);
+                receivingPc.addIceCandidate(iceCandidate);
               } else {
                 setQueuedCandidates((prev) => [...prev, iceCandidate]);
               }
             } else {
               setSendingPc((pc) => {
-                pc?.addIceCandidate(candidate);
+                pc?.addIceCandidate(iceCandidate);
                 return pc;
               });
             }

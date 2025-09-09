@@ -1,16 +1,35 @@
-export interface MessageBody {
-  type:
-    | "send-offer"
-    | "offer"
-    | "answer"
-    | "add-ice-candidate"
-    | "peer-disconnected"
-    | "wait-for-offer";
-  payload: {
-    sdp?: RTCSessionDescriptionInit;
-    roomId?: string;
-    candidate?: RTCIceCandidateInit;
-    userType: "sender" | "receiver";
-    message?: string;
-  };
-}
+export type MessageBody =
+  | {
+      type: "send-offer";
+      payload: {
+        roomId: string;
+      };
+    }
+  | {
+      type: "wait-for-offer";
+      payload: {
+        roomId: string;
+      };
+    }
+  | {
+      type: "offer";
+      payload: {
+        sdp: RTCSessionDescription;
+        roomId: string;
+      };
+    }
+  | {
+      type: "answer";
+      payload: {
+        sdp: RTCSessionDescription;
+        roomId: string;
+      };
+    }
+  | {
+      type: "add-ice-candidate";
+      payload: {
+        userType: "sender" | "receiver";
+        candidate: RTCIceCandidate;
+        roomId: string;
+      };
+    };
