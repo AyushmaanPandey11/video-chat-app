@@ -19,6 +19,9 @@ const Lobby = memo(
     );
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const [queuedCandidates, setQueuedCandidates] = useState<RTCIceCandidate[]>(
+      []
+    );
 
     const cleanupPeerConnections = useCallback(() => {
       setSendingPc((pc) => {
@@ -63,13 +66,8 @@ const Lobby = memo(
             setSendingPc(pc);
 
             pc.ontrack = (e) => {
-              const { track } = e;
               if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current.srcObject = e.streams[0];
                 remoteVideoRef.current
                   .play()
                   .catch((error) =>
@@ -110,42 +108,6 @@ const Lobby = memo(
           } else if (parsedMessage.type === "wait-for-offer") {
             setLobby(false);
             cleanupPeerConnections();
-            const roomId = parsedMessage.payload.roomId;
-            const pc = new RTCPeerConnection();
-            if (audioTrack) pc.addTrack(audioTrack);
-            if (videoTrack) pc.addTrack(videoTrack);
-            setReceivingPc(pc);
-
-            pc.ontrack = (e) => {
-              const { track } = e;
-              if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current
-                  .play()
-                  .catch((error) =>
-                    console.error("Error playing remote video:", error)
-                  );
-              }
-            };
-
-            pc.onicecandidate = async (e) => {
-              if (e.candidate) {
-                ws.send(
-                  JSON.stringify({
-                    type: "add-ice-candidate",
-                    payload: {
-                      candidate: e.candidate,
-                      userType: "receiver",
-                      roomId,
-                    },
-                  })
-                );
-              }
-            };
           } else if (parsedMessage.type === "offer") {
             setLobby(false);
             cleanupPeerConnections();
@@ -154,10 +116,16 @@ const Lobby = memo(
               return;
             }
             const pc = new RTCPeerConnection();
+            if (audioTrack) pc.addTrack(audioTrack);
+            if (videoTrack) pc.addTrack(videoTrack);
             await pc.setRemoteDescription(remoteSdp);
             const sdp = await pc.createAnswer();
             pc.setLocalDescription(sdp);
             setReceivingPc(pc);
+            queuedCandidates.forEach((candidate) => {
+              pc.addIceCandidate(candidate);
+            });
+            setQueuedCandidates([]);
             ws.send(
               JSON.stringify({
                 type: "answer",
@@ -169,13 +137,8 @@ const Lobby = memo(
             );
 
             pc.ontrack = (e) => {
-              const { track } = e;
               if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream?.addTrack(track);
-                remoteVideoRef.current.srcObject = stream;
+                remoteVideoRef.current.srcObject = e.streams[0];
                 remoteVideoRef.current
                   .play()
                   .catch((error) =>
@@ -185,10 +148,6 @@ const Lobby = memo(
             };
 
             pc.onicecandidate = async (e) => {
-              if (!e.candidate) {
-                return;
-              }
-              console.log("omn ice candidate on receiving seide");
               if (e.candidate) {
                 ws.send(
                   JSON.stringify({
@@ -215,24 +174,19 @@ const Lobby = memo(
           } else if (parsedMessage.type === "add-ice-candidate") {
             setLobby(false);
             const { userType, candidate } = parsedMessage.payload;
+            if (!candidate) {
+              return;
+            }
+            const iceCandidate = new RTCIceCandidate(candidate);
             if (userType === "sender") {
-              setReceivingPc((pc) => {
-                if (!pc) {
-                  console.error("receiving pc not found");
-                } else {
-                  console.log(pc.ontrack);
-                }
-                pc?.addIceCandidate(candidate);
-                return pc;
-              });
+              if (receivingPc) {
+                receivingPc.addIceCandidate(iceCandidate);
+              } else {
+                setQueuedCandidates((prev) => [...prev, iceCandidate]);
+              }
             } else {
               setSendingPc((pc) => {
-                if (!pc) {
-                  console.error(`sending pc not found`);
-                } else {
-                  console.log(pc.ontrack);
-                }
-                pc?.addIceCandidate(candidate);
+                pc?.addIceCandidate(iceCandidate);
                 return pc;
               });
             }
@@ -268,10 +222,9 @@ const Lobby = memo(
         <div
           style={{
             display: "flex",
-            flexDirection: "row",
+            flexDirection: "column",
             marginBottom: "10px",
             paddingBottom: "40px",
-            justifyContent: "space-between",
           }}
         >
           <video autoPlay muted width={500} ref={localVideoRef} />
