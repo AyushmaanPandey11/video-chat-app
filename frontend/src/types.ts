@@ -32,4 +32,11 @@ export type MessageBody =
         candidate: RTCIceCandidate;
         roomId: string;
       };
+    }
+  | {
+      type: "peer-disconnected";
+      payload: {
+        message: string;
+        roomId: string;
+      };
     };
