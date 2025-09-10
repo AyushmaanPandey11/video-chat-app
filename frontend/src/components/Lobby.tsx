@@ -302,7 +302,7 @@ const Lobby = memo(
         <div className="flex flex-col w-4/12">
           <div className="relative">
             {name && (
-              <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded">
+              <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded z-10">
                 {name}
               </h1>
             )}
