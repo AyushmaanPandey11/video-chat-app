@@ -339,7 +339,7 @@ const Lobby = memo(
           <video
             autoPlay
             muted
-            className="h-[500px] w-full object-cover rounded-lg"
+            className="h-[500px] w-full object-cover rounded-lg rotate-180"
             ref={remoteVideoRef}
           />
           <audio autoPlay ref={remoteAudioRef} className="hidden" />
