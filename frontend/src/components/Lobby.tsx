@@ -298,7 +298,7 @@ const Lobby = memo(
     }, [locaVideoTrack, localAudioTrack]);
 
     return (
-      <div className="flex flex-row justify-center items-center min-h-screen gap-8 mx-auto w-10/12">
+      <div className="flex flex-row justify-center items-center min-h-screen gap-0.5 mx-auto w-10/12">
         <div className="flex flex-col w-4/12">
           <div className="relative">
             {name && (
