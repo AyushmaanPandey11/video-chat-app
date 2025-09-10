@@ -18,6 +18,7 @@ const Lobby = memo(
       useState<null | RTCPeerConnection>(null);
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
+    const remoteAudioRef = useRef<HTMLAudioElement>(null);
     const [queuedCandidates, setQueuedCandidates] = useState<RTCIceCandidate[]>(
       []
     );
@@ -29,6 +30,9 @@ const Lobby = memo(
       });
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = null;
+      }
+      if (remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = null;
       }
     }, []);
 
@@ -44,6 +48,14 @@ const Lobby = memo(
         if (event.data === "lobby") {
           setLobby(true);
           cleanupPeerConnections();
+          return;
+        }
+        if (event.data === "peer-disconnected") {
+          setLobby(true);
+          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+          setOtherUsername("");
+          alert(`${otherUsername} has disconnected`);
         } else {
           const parsedMessage: MessageBody = JSON.parse(event.data);
           console.log(parsedMessage);
@@ -59,19 +71,37 @@ const Lobby = memo(
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = remoteStream;
             }
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.srcObject = remoteStream;
+            }
 
             pc.ontrack = (e) => {
               console.log("Received remote track:", e.track.kind);
               console.log("Event details:", e);
 
               const { track } = e;
-              if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current.play();
+              if (remoteStream) {
+                remoteStream.addTrack(track);
+
+                // If it's a video track, make sure it's connected to video element
+                if (track.kind === "video" && remoteVideoRef.current) {
+                  remoteVideoRef.current.srcObject = remoteStream;
+                  remoteVideoRef.current
+                    .play()
+                    .catch((error) =>
+                      console.error("Error playing remote video:", error)
+                    );
+                }
+
+                // If it's an audio track, make sure it's connected to audio element
+                if (track.kind === "audio" && remoteAudioRef.current) {
+                  remoteAudioRef.current.srcObject = remoteStream;
+                  remoteAudioRef.current
+                    .play()
+                    .catch((error) =>
+                      console.error("Error playing remote audio:", error)
+                    );
+                }
               }
             };
 
@@ -132,25 +162,34 @@ const Lobby = memo(
             if (remoteVideoRef.current) {
               remoteVideoRef.current.srcObject = remoteStream;
             }
-
-            const stream = new MediaStream();
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.srcObject = stream;
+            if (remoteAudioRef.current) {
+              remoteAudioRef.current.srcObject = remoteStream;
             }
 
             pc.ontrack = (e) => {
               const { track } = e;
-              if (remoteVideoRef.current) {
-                const stream =
-                  (remoteVideoRef.current.srcObject as MediaStream) ||
-                  new MediaStream();
-                stream.addTrack(track);
-                remoteVideoRef.current.srcObject = stream;
-                remoteVideoRef.current
-                  .play()
-                  .catch((error) =>
-                    console.error("Error playing remote video:", error)
-                  );
+              if (remoteStream) {
+                remoteStream.addTrack(track);
+
+                // If it's a video track, make sure it's connected to video element
+                if (track.kind === "video" && remoteVideoRef.current) {
+                  remoteVideoRef.current.srcObject = remoteStream;
+                  remoteVideoRef.current
+                    .play()
+                    .catch((error) =>
+                      console.error("Error playing remote video:", error)
+                    );
+                }
+
+                // If it's an audio track, make sure it's connected to audio element
+                if (track.kind === "audio" && remoteAudioRef.current) {
+                  remoteAudioRef.current.srcObject = remoteStream;
+                  remoteAudioRef.current
+                    .play()
+                    .catch((error) =>
+                      console.error("Error playing remote audio:", error)
+                    );
+                }
               }
             };
 
@@ -246,12 +285,17 @@ const Lobby = memo(
 
     useEffect(() => {
       if (localVideoRef.current && locaVideoTrack) {
-        localVideoRef.current.srcObject = new MediaStream([locaVideoTrack]);
+        const stream = new MediaStream();
+        stream.addTrack(locaVideoTrack);
+        if (localAudioTrack) {
+          stream.addTrack(localAudioTrack);
+        }
+        localVideoRef.current.srcObject = stream;
         localVideoRef.current.play().catch((err) => {
           console.error("Error playing local Video: ", err);
         });
       }
-    }, [locaVideoTrack]);
+    }, [locaVideoTrack, localAudioTrack]);
 
     return (
       <div className="flex flex-row justify-center items-center min-h-screen gap-8 mx-auto w-10/12">
@@ -276,7 +320,7 @@ const Lobby = memo(
               {otherUsername}
             </h1>
           )}
-          {lobby && !remoteVideoRef.current && (
+          {lobby && !remoteVideoRef.current?.srcObject && (
             <p className="absolute inset-0 flex items-center justify-center text-lg font-medium text-white bg-gray-400/50 rounded-lg">
               Waiting in lobby to connect with others
               <span className="inline-flex ml-2">
@@ -298,6 +342,7 @@ const Lobby = memo(
             className="h-[500px] w-full object-cover rounded-lg"
             ref={remoteVideoRef}
           />
+          <audio autoPlay ref={remoteAudioRef} className="hidden" />
         </div>
       </div>
     );

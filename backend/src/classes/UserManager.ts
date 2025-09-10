@@ -44,8 +44,14 @@ export class UserManager {
     if (user) {
       this.users = this.users.filter((x) => x.socket !== userSocket);
       this.queue = this.queue.filter((x) => x !== user.id);
+      const otherUser = this.roomManager.removeUserFromRoom(user.id);
+      if (otherUser) {
+        otherUser.socket.send("peer-disconnected");
+        otherUser.socket.send("lobby");
+        this.queue.push(otherUser.id);
+        this.matchAndClearQueue();
+      }
     }
-    return user;
   }
 
   matchAndClearQueue() {

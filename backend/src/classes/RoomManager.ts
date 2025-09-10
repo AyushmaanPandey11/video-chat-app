@@ -126,21 +126,11 @@ export class RoomManager {
     for (const [roomId, room] of this.rooms.entries()) {
       if (room.user1.id === userId || room.user2.id === userId) {
         const otherUser = room.user1.id === userId ? room.user2 : room.user1;
-        otherUser.socket.send(
-          JSON.stringify({
-            type: "peer-disconnected",
-            payload: {
-              roomId,
-              message: `User ${userId} has disconnected`,
-            },
-          })
-        );
-        otherUser.socket.send("lobby");
         this.rooms.delete(roomId);
         console.log(
           `Room ${roomId} removed due to user ${userId} disconnection`
         );
-        return;
+        return otherUser;
       }
     }
     console.warn(`No room found for user ${userId}`);

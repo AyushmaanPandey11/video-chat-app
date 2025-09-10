@@ -17,10 +17,7 @@ wss.on("connection", (userSocket) => {
   console.log("user connected");
   UserManager.getInstance().addUser("Anonymous", userSocket);
   userSocket.on("close", () => {
-    const user = UserManager.getInstance().removeUser(userSocket);
-    if (user) {
-      RoomManager.getInstance().removeUserFromRoom(user.id);
-    }
+    UserManager.getInstance().removeUser(userSocket);
   });
 });
 const PORT = 8080;
