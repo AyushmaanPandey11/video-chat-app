@@ -25,10 +25,10 @@ const LandingPage = () => {
   }, []);
 
   useEffect(() => {
-    if (videoRef && videoRef.current) {
+    if (videoRef && videoRef.current && username === "") {
       getStreamData();
     }
-  }, [getStreamData]);
+  }, [getStreamData, username]);
 
   // Conditional Rendering logic
   if (username) {
@@ -37,6 +37,7 @@ const LandingPage = () => {
         name={username}
         localAudioTrack={audioTrack}
         locaVideoTrack={videoTrack}
+        setUsername={setUsername}
       />
     );
   }

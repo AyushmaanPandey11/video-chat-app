@@ -6,10 +6,12 @@ const Lobby = memo(
     name,
     localAudioTrack,
     locaVideoTrack,
+    setUsername,
   }: {
     name: string;
     localAudioTrack: MediaStreamTrack | null;
     locaVideoTrack: MediaStreamTrack | null;
+    setUsername: (username: string) => void;
   }) => {
     const socket = useRef<WebSocket | null>(null);
     const [otherUsername, setOtherUsername] = useState("");
@@ -36,6 +38,27 @@ const Lobby = memo(
       }
     }, []);
 
+    const endCall = useCallback(
+      (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        if (socket.current) {
+          socket.current.send(
+            JSON.stringify({
+              type: "hang-up",
+            })
+          );
+          socket.current.close();
+          socket.current = null;
+        }
+        setLobby(true);
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+        if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+        setOtherUsername("");
+        setUsername("");
+      },
+      [setUsername]
+    );
+
     useEffect(() => {
       if (!name) return;
       const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
@@ -56,6 +79,15 @@ const Lobby = memo(
           if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
           setOtherUsername("");
           alert(`${otherUsername} has disconnected`);
+          return;
+        }
+        if (event.data === "hung-up") {
+          setLobby(true);
+          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
+          setOtherUsername("");
+          alert(`${otherUsername} has end the call`);
+          return;
         } else {
           const parsedMessage: MessageBody = JSON.parse(event.data);
           console.log(parsedMessage);
@@ -298,52 +330,62 @@ const Lobby = memo(
     }, [locaVideoTrack, localAudioTrack]);
 
     return (
-      <div className="flex flex-row justify-center items-center min-h-screen gap-0.5 mx-auto w-10/12">
-        <div className="flex flex-col w-4/12">
-          <div className="relative">
-            {name && (
-              <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded z-10">
-                {name}
+      <div className="flex flex-col min-h-screen py-14 space-y-10">
+        <div className="flex flex-row justify-center items-center gap-0.5 mx-auto w-10/12">
+          <div className="flex flex-col w-4/12">
+            <div className="relative">
+              {name && (
+                <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded z-10">
+                  {name}
+                </h1>
+              )}
+              <video
+                autoPlay
+                muted
+                className="h-[500px] w-full object-cover rounded-lg rotate-y-180"
+                ref={localVideoRef}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col w-7/12 relative">
+            {otherUsername && (
+              <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 z-10 rounded">
+                {otherUsername}
               </h1>
+            )}
+            {lobby && !remoteVideoRef.current?.srcObject && (
+              <p className="absolute inset-0 flex items-center justify-center text-lg font-medium text-white bg-gray-400/50 rounded-lg">
+                Waiting in lobby to connect with others
+                <span className="inline-flex ml-2">
+                  <span className="[animation:wave_0.8s_ease-in-out_infinite]">
+                    .
+                  </span>
+                  <span className="[animation:wave_0.8s_ease-in-out_infinite_0.2s]">
+                    .
+                  </span>
+                  <span className="[animation:wave_0.8s_ease-in-out_infinite_0.4s]">
+                    .
+                  </span>
+                </span>
+              </p>
             )}
             <video
               autoPlay
               muted
               className="h-[500px] w-full object-cover rounded-lg rotate-y-180"
-              ref={localVideoRef}
+              ref={remoteVideoRef}
             />
+            <audio autoPlay ref={remoteAudioRef} className="hidden" />
           </div>
         </div>
-        <div className="flex flex-col w-7/12 relative">
-          {otherUsername && (
-            <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded">
-              {otherUsername}
-            </h1>
-          )}
-          {lobby && !remoteVideoRef.current?.srcObject && (
-            <p className="absolute inset-0 flex items-center justify-center text-lg font-medium text-white bg-gray-400/50 rounded-lg">
-              Waiting in lobby to connect with others
-              <span className="inline-flex ml-2">
-                <span className="[animation:wave_0.8s_ease-in-out_infinite]">
-                  .
-                </span>
-                <span className="[animation:wave_0.8s_ease-in-out_infinite_0.2s]">
-                  .
-                </span>
-                <span className="[animation:wave_0.8s_ease-in-out_infinite_0.4s]">
-                  .
-                </span>
-              </span>
-            </p>
-          )}
-          <video
-            autoPlay
-            muted
-            className="h-[500px] w-full object-cover rounded-lg"
-            ref={remoteVideoRef}
-          />
-          <audio autoPlay ref={remoteAudioRef} className="hidden" />
-        </div>
+        {!lobby && (
+          <button
+            onClick={(e) => endCall(e)}
+            className="mx-auto w-1/12 bg-red-600 text-center text-white rounded-4xl cursor-pointer hover:brightness-110"
+          >
+            Hang Up
+          </button>
+        )}
       </div>
     );
   }

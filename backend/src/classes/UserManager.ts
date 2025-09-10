@@ -109,7 +109,14 @@ export class UserManager {
             message.payload.userType
           );
           break;
-
+        case "hang-up":
+          const otherUser = this.roomManager.removeUserFromRoom(userSocketId);
+          if (otherUser) {
+            otherUser.socket.send("hung-up");
+            this.queue.push(otherUser.id);
+            this.matchAndClearQueue();
+          }
+          break;
         default:
           break;
       }
