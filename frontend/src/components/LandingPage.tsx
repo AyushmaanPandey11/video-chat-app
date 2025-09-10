@@ -48,7 +48,7 @@ const LandingPage = () => {
           Oh Hey Man! Just Put any name and go to lobby.
         </label>
         <video
-          className="rounded-2xl border-2 border-purple-700 rotate-180"
+          className="rounded-2xl border-2 border-purple-700 rotate-x-180"
           autoPlay
           width={500}
           ref={videoRef}
