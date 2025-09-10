@@ -42,33 +42,45 @@ const LandingPage = () => {
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "space-around",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          marginLeft: "5vw",
-          padding: "10px",
-          marginRight: "10vw",
-        }}
-      >
-        <video autoPlay width={500} ref={videoRef} />
-        <label>Enter Your name</label>
-        <input
-          type="text"
-          onChange={(e) => (nameRef.current = e.target.value)}
+    <div>
+      <div className="flex flex-col mx-auto justify-center mt-10 items-center space-y-5">
+        <label className="text-center mt-5">
+          Oh Hey Man! Just Put any name and go to lobby.
+        </label>
+        <video
+          className="rounded-2xl border-2 border-purple-700"
+          autoPlay
+          width={500}
+          ref={videoRef}
         />
+        <div className="flex flex-row space-x-10 w-[500px] justify-center">
+          <label className="m-2 p-2">Enter Your name</label>
+          <input
+            type="text"
+            className="border-purple-700 border-2 rounded-md m-2 p-2"
+            onChange={(e) => (nameRef.current = e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (!nameRef.current) {
+                  alert("Hey Come on Man. Just put a name!");
+                  return;
+                }
+                setUsername(nameRef.current);
+              }
+            }}
+          />
+        </div>
         <button
           onClick={(e) => {
             e.preventDefault();
+            if (!nameRef.current) {
+              alert("Please enter your name");
+              return;
+            }
             setUsername(nameRef.current);
           }}
+          className="bg-purple-500"
         >
           Join Lobby
         </button>

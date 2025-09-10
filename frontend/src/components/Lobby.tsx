@@ -254,67 +254,48 @@ const Lobby = memo(
     }, [locaVideoTrack]);
 
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          marginBottom: "10px",
-          paddingBottom: "40px",
-          marginRight: "50px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            marginBottom: "10px",
-            paddingBottom: "40px",
-            marginRight: "50px",
-          }}
-        >
-          {name && <h1>hi {name}</h1>}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              marginBottom: "10px",
-              paddingBottom: "40px",
-              marginRight: "50px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                marginBottom: "10px",
-                paddingBottom: "40px",
-              }}
-            >
-              <video
-                autoPlay
-                muted
-                height={500}
-                width={400}
-                ref={localVideoRef}
-              />
-              {lobby ? "Waiting in lobby to connect with others" : null}
-            </div>
+      <div className="flex flex-row justify-center items-center min-h-screen gap-8 mx-auto w-10/12">
+        <div className="flex flex-col w-4/12">
+          <div className="relative">
+            {name && (
+              <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded">
+                {name}
+              </h1>
+            )}
+            <video
+              autoPlay
+              muted
+              className="h-[500px] w-full object-cover rounded-lg"
+              ref={localVideoRef}
+            />
           </div>
         </div>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            marginBottom: "10px",
-            paddingBottom: "40px",
-          }}
-        >
-          {otherUsername && <h1>Friend: {otherUsername}</h1>}
+        <div className="flex flex-col w-7/12 relative">
+          {otherUsername && (
+            <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded">
+              {otherUsername}
+            </h1>
+          )}
+          {lobby && !remoteVideoRef.current && (
+            <p className="absolute inset-0 flex items-center justify-center text-lg font-medium text-white bg-gray-400/50 rounded-lg">
+              Waiting in lobby to connect with others
+              <span className="inline-flex ml-2">
+                <span className="[animation:wave_0.8s_ease-in-out_infinite]">
+                  .
+                </span>
+                <span className="[animation:wave_0.8s_ease-in-out_infinite_0.2s]">
+                  .
+                </span>
+                <span className="[animation:wave_0.8s_ease-in-out_infinite_0.4s]">
+                  .
+                </span>
+              </span>
+            </p>
+          )}
           <video
             autoPlay
-            playsInline
-            height={500}
-            width={600}
+            muted
+            className="h-[500px] w-full object-cover rounded-lg"
             ref={remoteVideoRef}
           />
         </div>
