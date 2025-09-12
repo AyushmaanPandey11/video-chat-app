@@ -330,9 +330,9 @@ const Lobby = memo(
     }, [locaVideoTrack, localAudioTrack]);
 
     return (
-      <div className="flex flex-col min-h-screen py-14 space-y-10">
-        <div className="flex flex-row justify-center items-center gap-0.5 mx-auto w-10/12">
-          <div className="flex flex-col w-4/12">
+      <div className="flex flex-col h-screen md:min-h-screen py-8 space-y-6">
+        <div className="flex flex-col md:flex-row md:mt-14 justify-center items-center gap-4 mx-auto w-11/12 md:w-10/12">
+          <div className="flex flex-col w-full md:w-4/12">
             <div className="relative">
               {name && (
                 <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 rounded z-10">
@@ -342,19 +342,19 @@ const Lobby = memo(
               <video
                 autoPlay
                 muted
-                className="h-[500px] w-full object-cover rounded-lg rotate-y-180"
+                className="h-[300px] md:h-[500px] w-full object-cover rounded-lg rotate-y-180"
                 ref={localVideoRef}
               />
             </div>
           </div>
-          <div className="flex flex-col w-7/12 relative">
+          <div className="flex flex-col w-full md:w-7/12 relative">
             {otherUsername && (
               <h1 className="absolute top-2 left-2 text-sm font-bold text-white bg-purple-600 bg-opacity-50 px-2 py-1 z-10 rounded">
                 {otherUsername}
               </h1>
             )}
             {lobby && !remoteVideoRef.current?.srcObject && (
-              <p className="absolute inset-0 flex items-center justify-center text-lg font-medium text-white bg-gray-400/50 rounded-lg">
+              <p className="absolute inset-0 flex items-center justify-center text-base md:text-lg font-medium text-white bg-gray-400/50 rounded-lg">
                 Waiting in lobby to connect with others
                 <span className="inline-flex ml-2">
                   <span className="[animation:wave_0.8s_ease-in-out_infinite]">
@@ -372,7 +372,7 @@ const Lobby = memo(
             <video
               autoPlay
               muted
-              className="h-[500px] w-full object-cover rounded-lg rotate-y-180"
+              className="h-[300px] md:h-[500px] w-full object-cover rounded-lg rotate-y-180"
               ref={remoteVideoRef}
             />
             <audio autoPlay ref={remoteAudioRef} className="hidden" />
@@ -381,7 +381,7 @@ const Lobby = memo(
         {!lobby && (
           <button
             onClick={(e) => endCall(e)}
-            className="mx-auto w-1/12 bg-red-600 text-center text-white rounded-4xl cursor-pointer hover:brightness-110"
+            className="mx-auto w-32 bg-red-600 text-white text-center py-2 rounded-full cursor-pointer hover:brightness-110 z-20 relative"
           >
             Hang Up
           </button>

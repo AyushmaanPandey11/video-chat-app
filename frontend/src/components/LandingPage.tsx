@@ -45,13 +45,12 @@ const LandingPage = () => {
   return (
     <div>
       <div className="flex flex-col mx-auto justify-center mt-10 items-center space-y-5">
-        <label className="text-center mt-5">
+        <label className="text-center  mt-5 sm:mt-0 2xl:mt-3">
           Oh Hey Man! Just Put any name and go to lobby.
         </label>
         <video
-          className="rounded-2xl border-2 border-purple-700 rotate-y-180"
+          className="flex justify-center w-full h-[40vh] sm:w-[500px] sm:h-[375px] rounded-2xl border-2 border-purple-700 rotate-y-180 mx-auto object-cover"
           autoPlay
-          width={500}
           ref={videoRef}
         />
         <div className="flex flex-row space-x-10 w-[500px] justify-center">
@@ -81,7 +80,7 @@ const LandingPage = () => {
             }
             setUsername(nameRef.current);
           }}
-          className="bg-purple-500"
+          className="flex justify-center bg-purple-500"
         >
           Join Lobby
         </button>
