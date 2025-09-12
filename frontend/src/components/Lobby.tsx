@@ -62,7 +62,6 @@ const Lobby = memo(
     useEffect(() => {
       if (!name) return;
       const ws = new WebSocket("wss://video-chat-app-backend-ws.onrender.com");
-      // const ws = new WebSocket("ws://localhost:8080");
       socket.current = ws;
       ws.onopen = () => {
         console.log("WebSocket connection established");
@@ -77,7 +76,7 @@ const Lobby = memo(
           setLobby(true);
           if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
           if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
-          alert(`${otherUsername} has disconnected`);
+          alert(`${otherUsername || "The other user"} has disconnected`);
           setOtherUsername("");
           return;
         }
@@ -85,7 +84,7 @@ const Lobby = memo(
           setLobby(true);
           if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
           if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
-          alert(`${otherUsername} has end the call`);
+          alert(`${otherUsername || "The other user"} has hung up the call`);
           setOtherUsername("");
           return;
         } else {
@@ -115,7 +114,6 @@ const Lobby = memo(
               if (remoteStream) {
                 remoteStream.addTrack(track);
 
-                // If it's a video track, make sure it's connected to video element
                 if (track.kind === "video" && remoteVideoRef.current) {
                   remoteVideoRef.current.srcObject = remoteStream;
                   remoteVideoRef.current
@@ -125,7 +123,6 @@ const Lobby = memo(
                     );
                 }
 
-                // If it's an audio track, make sure it's connected to audio element
                 if (track.kind === "audio" && remoteAudioRef.current) {
                   remoteAudioRef.current.srcObject = remoteStream;
                   remoteAudioRef.current
@@ -203,7 +200,6 @@ const Lobby = memo(
               if (remoteStream) {
                 remoteStream.addTrack(track);
 
-                // If it's a video track, make sure it's connected to video element
                 if (track.kind === "video" && remoteVideoRef.current) {
                   remoteVideoRef.current.srcObject = remoteStream;
                   remoteVideoRef.current
@@ -213,7 +209,6 @@ const Lobby = memo(
                     );
                 }
 
-                // If it's an audio track, make sure it's connected to audio element
                 if (track.kind === "audio" && remoteAudioRef.current) {
                   remoteAudioRef.current.srcObject = remoteStream;
                   remoteAudioRef.current
