@@ -77,16 +77,16 @@ const Lobby = memo(
           setLobby(true);
           if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
           if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
-          setOtherUsername("");
           alert(`${otherUsername} has disconnected`);
+          setOtherUsername("");
           return;
         }
         if (event.data === "hung-up") {
           setLobby(true);
           if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
           if (remoteAudioRef.current) remoteAudioRef.current.srcObject = null;
-          setOtherUsername("");
           alert(`${otherUsername} has end the call`);
+          setOtherUsername("");
           return;
         } else {
           const parsedMessage: MessageBody = JSON.parse(event.data);
