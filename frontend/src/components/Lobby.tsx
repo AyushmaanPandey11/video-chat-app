@@ -299,7 +299,7 @@ const Lobby = memo(
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
         alert(
-          "I Think the free server running services are done for the month. After end of the month.",
+          "I Think the free server running services are done for the month. Come after end of the month. Sorry Mate!",
         );
       };
 
