@@ -22,7 +22,7 @@ const Lobby = memo(
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const remoteAudioRef = useRef<HTMLAudioElement>(null);
     const [queuedCandidates, setQueuedCandidates] = useState<RTCIceCandidate[]>(
-      []
+      [],
     );
 
     const cleanupPeerConnections = useCallback(() => {
@@ -45,7 +45,7 @@ const Lobby = memo(
           socket.current.send(
             JSON.stringify({
               type: "hang-up",
-            })
+            }),
           );
           socket.current.close();
           socket.current = null;
@@ -56,7 +56,7 @@ const Lobby = memo(
         setOtherUsername("");
         setUsername("");
       },
-      [setUsername]
+      [setUsername],
     );
 
     useEffect(() => {
@@ -119,7 +119,7 @@ const Lobby = memo(
                   remoteVideoRef.current
                     .play()
                     .catch((error) =>
-                      console.error("Error playing remote video:", error)
+                      console.error("Error playing remote video:", error),
                     );
                 }
 
@@ -128,7 +128,7 @@ const Lobby = memo(
                   remoteAudioRef.current
                     .play()
                     .catch((error) =>
-                      console.error("Error playing remote audio:", error)
+                      console.error("Error playing remote audio:", error),
                     );
                 }
               }
@@ -145,7 +145,7 @@ const Lobby = memo(
                     roomId,
                     name,
                   },
-                })
+                }),
               );
             };
 
@@ -159,7 +159,7 @@ const Lobby = memo(
                       roomId: roomId,
                       userType: "sender",
                     },
-                  })
+                  }),
                 );
               }
             };
@@ -205,7 +205,7 @@ const Lobby = memo(
                   remoteVideoRef.current
                     .play()
                     .catch((error) =>
-                      console.error("Error playing remote video:", error)
+                      console.error("Error playing remote video:", error),
                     );
                 }
 
@@ -214,7 +214,7 @@ const Lobby = memo(
                   remoteAudioRef.current
                     .play()
                     .catch((error) =>
-                      console.error("Error playing remote audio:", error)
+                      console.error("Error playing remote audio:", error),
                     );
                 }
               }
@@ -234,7 +234,7 @@ const Lobby = memo(
                       userType: "receiver",
                       roomId,
                     },
-                  })
+                  }),
                 );
               }
             };
@@ -263,7 +263,7 @@ const Lobby = memo(
                   sdp,
                   name,
                 },
-              })
+              }),
             );
           } else if (parsedMessage.type === "answer") {
             setLobby(false);
@@ -298,7 +298,9 @@ const Lobby = memo(
       };
       ws.onerror = (error) => {
         console.error("WebSocket error:", error);
-        alert("WebSocket connection failed");
+        alert(
+          "I Think the free server running services are done for the month. After end of the month.",
+        );
       };
 
       ws.onclose = () => {
@@ -383,7 +385,7 @@ const Lobby = memo(
         )}
       </div>
     );
-  }
+  },
 );
 
 export default Lobby;
